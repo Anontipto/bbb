@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: xray-bot
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_ADMIN_IDS
+        sync: false
+      - key: XRAY_API_URL
+        sync: false
+      - key: XRAY_API_SECRET
+        sync: false
+      - key: GH_TOKEN
+        sync: false
+      - key: CODESPACE_NAME
+        sync: false
