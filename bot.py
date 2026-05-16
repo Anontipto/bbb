@@ -677,44 +677,67 @@ async def traffic_monitor(context: ContextTypes.DEFAULT_TYPE):
 
 # ========================== Main ==========================
 def main():
+    import sys
+
+    print("=" * 50, flush=True)
+    print("Xray Telegram Bot v2.0 starting...", flush=True)
+    print(f"BOT_TOKEN: {'SET' if BOT_TOKEN else 'NOT SET !!!'}", flush=True)
+    print(f"API_URL: {API_URL or 'NOT SET !!!'}", flush=True)
+    print(f"API_KEY: {'SET' if API_KEY else 'NOT SET'}", flush=True)
+    print(f"ADMIN_IDS: {ADMIN_IDS or 'NOT SET !!!'}", flush=True)
+    print("=" * 50, flush=True)
+
     if not BOT_TOKEN:
-        print("ERROR: TELEGRAM_BOT_TOKEN not set")
-        return
+        print("FATAL: TELEGRAM_BOT_TOKEN not set! Add it in Render Environment.", flush=True)
+        sys.exit(1)
     if not API_URL:
-        print("ERROR: XRAY_API_URL not set")
-        return
+        print("FATAL: XRAY_API_URL not set! Add it in Render Environment.", flush=True)
+        sys.exit(1)
+    if not ADMIN_IDS:
+        print("WARNING: TELEGRAM_ADMIN_IDS not set! No one can use the bot.", flush=True)
 
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    # Test API connection
+    try:
+        r = requests.get(f"{API_URL}/", headers={"X-API-Key": API_KEY}, timeout=10)
+        print(f"API test: {r.status_code} - {r.text[:100]}", flush=True)
+    except Exception as e:
+        print(f"WARNING: Cannot reach API: {e}", flush=True)
 
-    # User management commands
-    app.add_handler(CommandHandler("start", start_cmd))
-    app.add_handler(CommandHandler("users", users_cmd))
-    app.add_handler(CommandHandler("info", info_cmd))
-    app.add_handler(CommandHandler("add", add_cmd))
-    app.add_handler(CommandHandler("del", del_cmd))
-    app.add_handler(CommandHandler("limit", limit_cmd))
-    app.add_handler(CommandHandler("enable", enable_cmd))
-    app.add_handler(CommandHandler("disable", disable_cmd))
-    app.add_handler(CommandHandler("reset", reset_cmd))
-    app.add_handler(CommandHandler("restart", restart_cmd))
+    try:
+        app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    # Monitoring commands
-    app.add_handler(CommandHandler("active", active_cmd))
-    app.add_handler(CommandHandler("sites", sites_cmd))
-    app.add_handler(CommandHandler("top", top_cmd))
+        # User management commands
+        app.add_handler(CommandHandler("start", start_cmd))
+        app.add_handler(CommandHandler("users", users_cmd))
+        app.add_handler(CommandHandler("info", info_cmd))
+        app.add_handler(CommandHandler("add", add_cmd))
+        app.add_handler(CommandHandler("del", del_cmd))
+        app.add_handler(CommandHandler("limit", limit_cmd))
+        app.add_handler(CommandHandler("enable", enable_cmd))
+        app.add_handler(CommandHandler("disable", disable_cmd))
+        app.add_handler(CommandHandler("reset", reset_cmd))
+        app.add_handler(CommandHandler("restart", restart_cmd))
 
-    # Blocking commands
-    app.add_handler(CommandHandler("block", block_cmd))
-    app.add_handler(CommandHandler("unblock", unblock_cmd))
-    app.add_handler(CommandHandler("blocks", blocks_cmd))
+        # Monitoring commands
+        app.add_handler(CommandHandler("active", active_cmd))
+        app.add_handler(CommandHandler("sites", sites_cmd))
+        app.add_handler(CommandHandler("top", top_cmd))
 
-    # Traffic notification (every 5 minutes)
-    app.job_queue.run_repeating(traffic_monitor, interval=300, first=10)
+        # Blocking commands
+        app.add_handler(CommandHandler("block", block_cmd))
+        app.add_handler(CommandHandler("unblock", unblock_cmd))
+        app.add_handler(CommandHandler("blocks", blocks_cmd))
 
-    print("Xray Telegram Bot v2.0 started")
-    print(f"API: {API_URL}")
-    print(f"Admins: {ADMIN_IDS}")
-    app.run_polling()
+        # Traffic notification (every 5 minutes)
+        app.job_queue.run_repeating(traffic_monitor, interval=300, first=10)
+
+        print("Bot is running! Waiting for messages...", flush=True)
+        app.run_polling()
+    except Exception as e:
+        print(f"FATAL ERROR: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
